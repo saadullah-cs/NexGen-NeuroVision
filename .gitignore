@@ -1,0 +1,6 @@
+﻿venv/
+data/raw/*
+!data/raw/.keep
+outputs/models/*.pth
+__pycache__/
+.ipynb_checkpoints/
