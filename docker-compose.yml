@@ -1,0 +1,26 @@
+services:
+  neurovision-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: neurovision_inference_engine
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs/models:/app/outputs/models:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  neurovision-web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: neurovision_web_interface
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - neurovision-api
+    restart: unless-stopped

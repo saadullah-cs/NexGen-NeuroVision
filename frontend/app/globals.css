@@ -1,0 +1,224 @@
+@import "tailwindcss";
+
+/*
+ * globals.css — Ultra-Premium SaaS Design System
+ * --------------------------------------------------
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+  
+  --color-light-bg: #f8fafc;
+  --color-dark-bg: #050505;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  perspective: 1000px;
+}
+
+/* ── Extreme Micro-Interactions & Choreography ── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(30px); filter: blur(8px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes blob {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(30px, -50px) scale(1.1); }
+  66%  { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes text-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scanner {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-blob {
+  animation: blob 15s infinite alternate;
+}
+
+.animate-text-shimmer {
+  background-size: 200% auto;
+  animation: text-shimmer 3s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
+.animate-scanner {
+  animation: scanner 2s linear infinite;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+/* ── Bento Card Glass/Gradient Styles & 3D Tilt ── */
+.bento-card {
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  background-clip: padding-box;
+  transform-style: preserve-3d;
+}
+
+.bento-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(225, 29, 72, 0.4), rgba(14, 165, 233, 0.4));
+  transition: opacity 0.5s ease;
+  opacity: 0.15;
+}
+
+.dark .bento-card::before {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(139, 92, 246, 0.3));
+  opacity: 0.2;
+}
+
+.bento-card:hover {
+  transform: translateY(-8px) rotateX(2deg) rotateY(-1deg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dark .bento-card:hover::before {
+  opacity: 0.6;
+}
+
+/* ── Cursor-Tracking Spotlight (The Wow Factor) ── */
+.spotlight-card {
+  position: relative;
+}
+
+.spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background: radial-gradient(
+    800px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+    rgba(255, 255, 255, 0.08),
+    transparent 40%
+  );
+  z-index: 10;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.dark .spotlight-card::after {
+  background: radial-gradient(
+    800px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+    rgba(255, 255, 255, 0.1),
+    transparent 40%
+  );
+}
+
+.spotlight-card:hover::after {
+  opacity: 1;
+}
+
+/* ── Metric Card Group Hovers ── */
+.metric-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.metric-card:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* ── Animated DropZone Border ── */
+.marching-ants {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--ant-color, #9ca3af) 0,
+    var(--ant-color, #9ca3af) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  background-size: 28px 28px;
+  animation: march 1s linear infinite;
+}
+
+@keyframes march {
+  from { background-position: 0 0; }
+  to { background-position: 28px 0; }
+}
+
+.dark .marching-ants {
+  --ant-color: #4b5563;
+}
+
+/* ── JSON Syntax Highlighting ── */
+.json-key { color: #3b82f6; font-weight: 600; }
+.json-string { color: #10b981; }
+.json-number { color: #f59e0b; }
+.json-boolean { color: #f43f5e; font-weight: 600; }
+.json-null { color: #64748b; font-style: italic; }
+
+.dark .json-key { color: #60a5fa; }
+.dark .json-string { color: #34d399; }
+.dark .json-number { color: #fbbf24; }
+.dark .json-boolean { color: #fb7185; }
+.dark .json-null { color: #94a3b8; }

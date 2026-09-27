@@ -82,7 +82,7 @@ def execute_pipeline():
     classes = list(class_to_idx.keys())
     
     models = {
-        "CNN_ResNet50": NeuroVisionCNN(num_classes=4, freeze_backbone=True),
+        "CNN_ResNet50": NeuroVisionCNN(num_classes=4, freeze_backbone=False),
         "RNN_Sequential": SequentialRNN(num_classes=4),
         "LSTM_Sequential": SequentialLSTM(num_classes=4)
     }

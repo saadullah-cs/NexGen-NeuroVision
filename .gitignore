@@ -4,3 +4,13 @@ data/raw/*
 outputs/models/*.pth
 __pycache__/
 .ipynb_checkpoints/
+
+# Frontend Build Artifacts & Dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
