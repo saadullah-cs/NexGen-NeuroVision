@@ -87,7 +87,7 @@ def execute_pipeline():
         "LSTM_Sequential": SequentialLSTM(num_classes=4)
     }
     
-    epochs = 45
+    epochs = 25
     criterion = nn.CrossEntropyLoss()
     
     metrics_register = []
