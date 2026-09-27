@@ -1,54 +1,61 @@
-# NexGen NeuroVision: Brain Tumor Classification Pipeline
+# NexGen NeuroVision: Diagnostic MLOps Pipeline
 
-**Author:** Saad Ullah
+**Lead Engineer:** Saad Ullah
 
 ## Overview
-This repository contains a complete machine learning operations pipeline built to classify brain tumor types from raw magnetic resonance imaging scans. The project serves as an empirical comparison between spatial feature extraction and sequential feature extraction on image data. 
+NexGen NeuroVision is a pipeline engineered to classify brain tumor topologies from raw magnetic resonance imaging (MRI) scans. The project serves as an empirical demonstration of spatial vs. sequential feature extraction, culminating in a production ready, containerized diagnostic web application.
 
-We engineered three distinct neural network architectures using PyTorch and evaluated them on the same hardware and dataset to determine which approach yields the highest reliability for medical diagnostics.
+The core objective was to push beyond standard transfer learning by fully fine tuning a deep residual network and deploying the optimized weights via an ONNX runtime engine to a Next.js clinical dashboard.
 
-## Dataset Details
-The models are trained on the Brain Tumor Classification dataset from Kaggle. 
-* **Total Images:** 7200 scans 
-* **Classes:** Glioma, Meningioma, Pituitary, and No Tumor
-* **Balance:** Perfectly balanced with exactly 1800 images per class
-* **Data Split:** 66 percent Training, 12 percent Validation, 22 percent Holdout Test
+## Dataset & Preprocessing Architecture
+The models ingest the Brain Tumor Classification dataset (Kaggle), consisting of 7,200 perfectly balanced MRI scans across four classes: **Glioma, Meningioma, Pituitary, and No Tumor**. 
 
-The data ingestion pipeline applies dynamic augmentation to the training set including random horizontal flips, rotational shifts, and color jitter to prevent overfitting. We enforce strict data isolation so the validation and test sets remain unaltered.
+*   **Split Strategy:** 66% Training, 12% Validation, 22% Holdout Test.
+*   **Spatial Augmentation:** The training pipeline utilizes dynamic transformations (random horizontal flips, rotational shifts, and color jitter) to prevent overfitting and enforce spatial generalization.
+*   **Normalization:** Tensors are standardized against strict ImageNet distribution metrics.
 
-## Model Architectures
-We implemented three separate models to test different mathematical approaches to image processing.
+## Neural Architectures
+To test mathematical approaches to image processing, three distinct paradigms were engineered using PyTorch:
 
-1. **Convolutional Neural Network (ResNet50)**
-We used a transfer learning approach with a pretrained ResNet50 backbone. The base gradients are frozen to save compute resources, and we attached a custom multiple layer classification head with heavy dropout. This model evaluates the image spatially using two dimensional kernels.
+1.  **Convolutional Neural Network (Fine Tuned ResNet50)**
+    Rather than freezing the ImageNet backbone, the entire 24 million parameter network was unfrozen. Paired with a `ReduceLROnPlateau` scheduler and a micro learning rate, the network learned the specific micro textures of brain tissue without catastrophic forgetting.
+2.  **Long Short-Term Memory (LSTM)**
+    Images were flattened into 224-step sequences to test sequential processing. Memory gates retained information from the top of the scan while processing the bottom.
+3.  **Recurrent Neural Network (RNN)**
+    A standard sequential baseline lacking advanced memory gating mechanisms.
 
-2. **Long Short Term Memory**
-To test sequential processing, the images are flattened into sequences of 224 rows. The LSTM processes these rows sequentially. It uses memory gates to retain information from the top of the image while scanning the bottom.
+## Empirical Validation
+Flattening an image into a linear sequence fundamentally destroys the localized geometric context required to define tumor boundaries. The fine-tuned CNN preserved this spatial geometry natively, achieving clinical grade reliability.
 
-3. **Recurrent Neural Network**
-A standard sequential network that processes the flattened image arrays identically to the LSTM but without the advanced memory gating mechanisms. 
+| Architecture | Accuracy | Precision | Recall | F1 Score | Parameters |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **CNN ResNet50** | **95.5%** | **0.958** | **0.955** | **0.953** | **24,033,604** |
+| LSTM Sequential | 77.1% | 0.766 | 0.771 | 0.759 | 551,236 |
+| RNN Sequential | 65.3% | 0.626 | 0.653 | 0.620 | 144,196 |
 
-## Empirical Results
-The CNN heavily outperformed the sequential models. Flattening an image into a linear sequence destroys the geometric shape and localized context that define tumor boundaries. The CNN preserves this spatial geometry natively.
+![Cross-Architecture ROC Overlay](outputs/plots/unified_roc_comparison.png)
 
-| Architecture | Accuracy | Precision | Recall | F1 Score | Trainable Parameters | Compute Time |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| CNN ResNet50 | 82.8% | 0.831 | 0.828 | 0.822 | 525,572 | 12 minutes |
-| LSTM Sequential | 70.4% | 0.725 | 0.704 | 0.683 | 551,236 | 8 minutes |
-| RNN Sequential | 56.8% | 0.554 | 0.568 | 0.516 | 144,196 | 8 minutes |
+## Full-Stack Deployment Architecture
+The repository extends beyond notebook training into a decoupled, production-ready web application. 
+
+*   **Inference Backend (FastAPI):** The trained PyTorch state dictionary is compiled into a static ONNX execution graph. The Python backend processes incoming REST payloads, computes Grad-CAM activation maps for lesion localization, and extracts dynamic bounding boxes.
+*   **Client Interface (Next.js):** A highly responsive, glassmorphism UI built with Tailwind CSS. It manages the drag-and-drop diagnostic node, visualizes the activation heatmaps, and provides automated client-side PDF clinical report generation.
+*   **Orchestration (Docker):** The entire stack is containerized via `docker-compose`, with dynamic port binding for seamless CI/CD integration into cloud environments like Render.
 
 ## Project Structure
 ```text
 NexGen-NeuroVision/
+├── api/                     # FastAPI ONNX Inference Node
 ├── data/
-│   ├── raw/                 # Raw Kaggle images drop here
-│   └── processed/           # Transformed tensors 
+│   ├── raw/                 # Raw Kaggle images
+│   └── processed/           # Transformed tensors
+├── frontend/                # Next.js Clinical Dashboard
 ├── notebooks/
 │   └── execution_engine.ipynb
 ├── outputs/
-│   ├── models/              # Saved PyTorch weights (.pth)
+│   ├── models/              # Compiled ONNX Engines & .pth Weights
 │   ├── plots/               # Confusion matrices and ROC curves
-│   └── reports/             # Telemetry CSV files
+│   └── reports/             # Telemetry & Validation CSVs
 ├── src/
 │   ├── data/
 │   │   └── dataset.py       # PyTorch Dataset and DataLoader logic
@@ -60,6 +67,8 @@ NexGen-NeuroVision/
 │   │   └── metrics.py       # Scikit learn evaluation logic
 │   └── train.py             # Main execution orchestrator
 ├── .gitignore
+├── docker-compose.yml       # Production Container Blueprint
+├── render.yaml              # Cloud Infrastructure as Code
 ├── requirements.txt
 └── README.md
 ```
@@ -75,21 +84,19 @@ To run this pipeline on your local hardware or a cloud compute instance, follow 
     cd NexGen-NeuroVision
     ```
 
-2. Provision the environment
+2. Provision the Containers
+
+    Ensure Docker Desktop is running, then execute the orchestration blueprint. This command builds the Alpine Node.js frontend and the Python inference backend simultaneously:
 
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows use: .\venv\Scripts\activate
-    pip install -r requirements.txt
+    docker compose up --build -d
     ```
 
-3. Ingest the dataset
-   Ensure you have the Kaggle dataset downloaded. Place the Training and Testing folders directly into the `data/raw/` directory.
+3. Access the Dashboard
 
-4. Execute the training orchestrator
+    Navigate to [http://localhost:3000](http://localhost:3000) to access the diagnostic node. The API will listen silently on port `8000`.
 
-   ```bash
-   python -m src.train
-   ```
-
-The terminal will print the epoch telemetry in real time. Once convergence is reached, the evaluation engine will test the holdout set and flush all weights, comparative tables, and visual plots to the `outputs/` directory.
+> **Tip:** To run the ML training pipeline independently from source, activate your virtual environment, install `requirements.txt`, and execute:
+> ```bash
+> python -m src.train
+> ```
