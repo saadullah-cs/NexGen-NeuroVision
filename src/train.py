@@ -87,7 +87,7 @@ def execute_pipeline():
         "LSTM_Sequential": SequentialLSTM(num_classes=4)
     }
     
-    epochs = 15
+    epochs = 45
     criterion = nn.CrossEntropyLoss()
     
     metrics_register = []
@@ -96,7 +96,8 @@ def execute_pipeline():
     for name, model in models.items():
         print(f"\n{'='*50}\nInitializing Lifecycle: {name}\n{'='*50}")
         model = model.to(device)
-        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+        optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
         
         history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
         start_time = time.time()
@@ -104,6 +105,7 @@ def execute_pipeline():
         for epoch in range(epochs):
             t_loss, t_acc = train_epoch(model, train_loader, criterion, optimizer, device)
             v_loss, v_acc, _, _, _ = evaluate_epoch(model, val_loader, criterion, device)
+            scheduler.step(v_loss)
             
             history['train_loss'].append(t_loss)
             history['train_acc'].append(t_acc)
