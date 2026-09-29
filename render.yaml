@@ -2,6 +2,7 @@
   - type: web
     name: neurovision-api
     env: docker
+    plan: free
     dockerfilePath: ./api/Dockerfile
     envVars:
       - key: PYTHONUNBUFFERED
