@@ -6,7 +6,8 @@ import { DropZone } from "@/components/DropZone";
 import { ResultCanvas } from "@/components/ResultCanvas";
 import { TelemetryWidget } from "@/components/TelemetryWidget";
 import type { UploadState } from "@/lib/types";
-import { Moon, Sun, ShieldCheck } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
+import Image from "next/image";
 
 export default function DashboardPage() {
   const [uploadState, setUploadState] = useState<UploadState>({ status: "idle" });
@@ -51,9 +52,7 @@ export default function DashboardPage() {
             <div className="flex h-16 items-center justify-between">
               
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-cyan-400 dark:from-violet-600 dark:to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                  <ShieldCheck size={22} className="text-white" />
-                </div>
+                <Image alt="NexGen Logo" className="object-contain drop-shadow-md" height={48} src="/nexgen_logo.png" width={48}/>
                 <span className="font-extrabold text-2xl tracking-tighter bg-gradient-to-r from-violet-600 to-cyan-500 dark:from-violet-400 dark:to-cyan-300 bg-clip-text text-transparent animate-text-shimmer">
                   NexGen NeuroVision
                 </span>
