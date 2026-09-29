@@ -12,11 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-
 RUN pip install --no-cache-dir -r requirements.txt
-
 RUN pip install --no-cache-dir grad-cam opencv-python-headless uvicorn fastapi python-multipart
+
+RUN pip uninstall -y torch torchvision
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 COPY src/ /app/src/
 COPY api/ /app/api/

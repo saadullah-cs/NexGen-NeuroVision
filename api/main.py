@@ -1,13 +1,11 @@
 ﻿"""
 NexGen NeuroVision Diagnostic Engine
-Provides classification, class activation mapping, and lesion localization.
-Optimized for low-memory cloud containerization (<512MB RAM).
+Optimized for low-memory cloud containerization (<512MB RAM) via Lazy Loading.
 """
 
 import os
 import gc
 
-# Single-threading before importing numerical libraries
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -43,25 +41,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 class_labels = ["Glioma", "Meningioma", "No Tumor", "Pituitary"]
 
-# Memory-Safe Model Initialization
-weights_path = Path("outputs/models/CNN_ResNet50_weights.pth")
-model = NeuroVisionCNN(num_classes=4, freeze_backbone=False)
+model = None
+cam = None
 
-# State dictionary, injection into model, and freeing dictionary from RAM
-state_dict = torch.load(weights_path, map_location=device, weights_only=True)
-model.load_state_dict(state_dict)
-del state_dict
-gc.collect()
-
-model.to(device)
-model.eval()
-
-# Final convolutional layer of ResNet50 for activation maps
-target_layers = [model.model.layer4[-1]]
-cam = GradCAM(model=model, target_layers=target_layers)
+def initialize_engine():
+    """Lazy Loader: Injects the 95MB model into RAM strictly AFTER the server boots."""
+    global model, cam
+    if model is None:
+        print("First request detected. Initializing AI Engine into RAM...")
+        weights_path = Path("outputs/models/CNN_ResNet50_weights.pth")
+        model = NeuroVisionCNN(num_classes=4, freeze_backbone=False)
+        
+        state_dict = torch.load(weights_path, map_location=device, weights_only=True)
+        model.load_state_dict(state_dict)
+        
+        del state_dict
+        gc.collect()
+        
+        model.to(device)
+        model.eval()
+        target_layers = [model.model.layer4[-1]]
+        cam = GradCAM(model=model, target_layers=target_layers)
+        print("AI Engine Ready.")
 
 def transform_image(image_bytes: bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
@@ -81,10 +85,12 @@ def transform_image(image_bytes: bytes):
 @app.post("/api/diagnose")
 async def process_scan(file: UploadFile = File(...)):
     start_time = time.time()
+    
+    initialize_engine()
+    
     image_bytes = await file.read()
     input_tensor, rgb_normalized, (orig_w, orig_h) = transform_image(image_bytes)
 
-    # Forward Pass & Probability Extraction
     with torch.no_grad():
         logits = model(input_tensor)
         probabilities = F.softmax(logits, dim=1).cpu().numpy()[0]
@@ -93,11 +99,9 @@ async def process_scan(file: UploadFile = File(...)):
     predicted_class = class_labels[predicted_idx]
     confidence = float(probabilities[predicted_idx])
     
-    # Grad-CAM Activation Mapping
     targets = [ClassifierOutputTarget(predicted_idx)]
     grayscale_cam = cam(input_tensor=input_tensor, targets=targets)[0, :]
     
-    # Dynamic Bounding Box Extraction via Contour Thresholding
     bounding_box = None
     if predicted_class != "No Tumor":
         mask = (grayscale_cam > 0.6).astype(np.uint8) * 255
@@ -114,7 +118,6 @@ async def process_scan(file: UploadFile = File(...)):
                 "height": round(float(h) / 224.0, 4)
             }
 
-    # Heatmap Visualization Rendering
     cam_image = show_cam_on_image(rgb_normalized, grayscale_cam, use_rgb=True)
     
     if bounding_box:
@@ -129,7 +132,6 @@ async def process_scan(file: UploadFile = File(...)):
     
     latency = round((time.time() - start_time) * 1000, 2)
 
-    # Clean intermediate tensor buffers
     del input_tensor
     del grayscale_cam
     gc.collect()
