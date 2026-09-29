@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DefectScan — Quality Inspection Platform",
-  description: "Enterprise-grade automated visual defect detection powered by ONNX.",
+  title: "NexGen NeuroVision",
+  description: "AI-powered magnetic resonance imaging diagnostic engine and clinical telemetry platform.",
   robots: "index, follow",
 };
 
