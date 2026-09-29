@@ -100,3 +100,10 @@ To run this pipeline on your local hardware or a cloud compute instance, follow 
 > ```bash
 > python -m src.train
 > ```
+
+## 🛡️ License & Authorship
+Designed and engineered by **Saad Ullah**.  
+Proprietary technical architecture. All rights reserved.
+
+> **🛑 PROPRIETARY SOFTWARE:** 
+> This repository is public strictly for portfolio demonstration and technical evaluation. The code, UI/UX design (SCADA HUD), and backend architecture are the exclusive intellectual property of **NexGen Builds**. Copying, cloning, or utilizing this source code for personal or commercial projects is strictly prohibited. See the `LICENSE` file for details.

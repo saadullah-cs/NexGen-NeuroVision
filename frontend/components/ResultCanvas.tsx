@@ -11,6 +11,13 @@ interface ResultCanvasProps {
   result: DetectionResult;
 }
 
+const formatProbability = (val: number) => {
+  const percent = val * 100;
+  if (percent >= 99.995) return ">99.99";
+  if (percent <= 0.005 && percent > 0) return "<0.01";
+  return percent.toFixed(2);
+};
+
 export function ResultCanvas({ imageDataUrl, result }: ResultCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -173,7 +180,7 @@ export function ResultCanvas({ imageDataUrl, result }: ResultCanvasProps) {
             Confidence
           </span>
           <span className="text-3xl font-black font-mono text-cyan-600 dark:text-cyan-400 drop-shadow-sm">
-            {(result.confidence * 100).toFixed(2)}%
+            {formatProbability(result.confidence)}%
           </span>
         </div>
       </div>

@@ -164,6 +164,13 @@ function MetricCard({ label, value, isAlert }: { label: string; value: string; i
   );
 }
 
+const formatProbability = (val: number) => {
+  const percent = val * 100;
+  if (percent >= 99.995) return ">99.99";
+  if (percent <= 0.005 && percent > 0) return "<0.01";
+  return percent.toFixed(2);
+};
+
 function DistributionCard({ distribution }: { distribution: Record<string, number> }) {
   const classes = ["Glioma", "Meningioma", "Pituitary", "No Tumor"];
   
@@ -173,7 +180,7 @@ function DistributionCard({ distribution }: { distribution: Record<string, numbe
       <div className="flex flex-col gap-4">
         {classes.map(cls => {
           const val = distribution[cls] || 0;
-          const pct = Math.round(val * 100);
+          const pct = formatProbability(val);
           return (
             <div key={cls} className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center text-sm font-bold">
@@ -210,8 +217,8 @@ function ConfidenceRing({ score, defect }: { score: number; defect: boolean }) {
         <circle cx="60" cy="60" r={R} fill="none" stroke={strokeColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={`${fill} ${gap}`} className="transition-all duration-1000 ease-out" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-black tracking-tighter" style={{ color: strokeColor }}>
-          {Math.round(score * 100)}
+        <span className="text-3xl font-black tracking-tighter" style={{ color: strokeColor }}>
+          {formatProbability(score)}
         </span>
       </div>
     </div>
