@@ -1,11 +1,24 @@
 ﻿"""
 NexGen NeuroVision Diagnostic Engine
 Provides classification, class activation mapping, and lesion localization.
+Optimized for low-memory cloud containerization (<512MB RAM).
 """
+
+import os
+import gc
+
+# Single-threading before importing numerical libraries
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+import torch
+torch.set_num_threads(1)
 
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-import torch
 import torch.nn.functional as F
 import numpy as np
 from PIL import Image
@@ -33,14 +46,20 @@ app.add_middleware(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class_labels = ["Glioma", "Meningioma", "No Tumor", "Pituitary"]
 
-# trained model
+# Memory-Safe Model Initialization
 weights_path = Path("outputs/models/CNN_ResNet50_weights.pth")
 model = NeuroVisionCNN(num_classes=4, freeze_backbone=False)
-model.load_state_dict(torch.load(weights_path, map_location=device, weights_only=True))
+
+# State dictionary, injection into model, and freeing dictionary from RAM
+state_dict = torch.load(weights_path, map_location=device, weights_only=True)
+model.load_state_dict(state_dict)
+del state_dict
+gc.collect()
+
 model.to(device)
 model.eval()
 
-# final convolutional layer of ResNet50 for activation maps
+# Final convolutional layer of ResNet50 for activation maps
 target_layers = [model.model.layer4[-1]]
 cam = GradCAM(model=model, target_layers=target_layers)
 
@@ -81,7 +100,6 @@ async def process_scan(file: UploadFile = File(...)):
     # Dynamic Bounding Box Extraction via Contour Thresholding
     bounding_box = None
     if predicted_class != "No Tumor":
-        # Binary mask of the upper 60% activation zone
         mask = (grayscale_cam > 0.6).astype(np.uint8) * 255
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -89,7 +107,6 @@ async def process_scan(file: UploadFile = File(...)):
             largest_contour = max(contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(largest_contour)
             
-            # Coordinates relative to the 224x224 input grid
             bounding_box = {
                 "x": round(float(x) / 224.0, 4),
                 "y": round(float(y) / 224.0, 4),
@@ -97,7 +114,7 @@ async def process_scan(file: UploadFile = File(...)):
                 "height": round(float(h) / 224.0, 4)
             }
 
-    # Heatmap Visualization
+    # Heatmap Visualization Rendering
     cam_image = show_cam_on_image(rgb_normalized, grayscale_cam, use_rgb=True)
     
     if bounding_box:
@@ -112,6 +129,11 @@ async def process_scan(file: UploadFile = File(...)):
     
     latency = round((time.time() - start_time) * 1000, 2)
 
+    # Clean intermediate tensor buffers
+    del input_tensor
+    del grayscale_cam
+    gc.collect()
+
     return {
         "status": "success",
         "diagnosis": predicted_class,
@@ -124,6 +146,5 @@ async def process_scan(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    import os
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
