@@ -4,13 +4,13 @@ Architecture for direct 2D feature extraction.
 """
 
 import torch.nn as nn
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import resnet50
 
 class NeuroVisionCNN(nn.Module):
     def __init__(self, num_classes: int = 4, freeze_backbone: bool = False):
         super(NeuroVisionCNN, self).__init__()
         
-        self.model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+        self.model = resnet50(weights=None)
         
         if freeze_backbone:
             for param in self.model.parameters():
