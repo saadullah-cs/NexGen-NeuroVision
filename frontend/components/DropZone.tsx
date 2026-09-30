@@ -43,7 +43,8 @@ export function DropZone({ onStateChange }: DropZoneProps) {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/diagnose`, {
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+      const response = await fetch(`${baseUrl}/api/diagnose`, {
         method: "POST",
         body: formData,
       });
