@@ -1,6 +1,6 @@
 ﻿"""
 NexGen NeuroVision Diagnostic Engine
-Optimized for low-memory cloud containerization (<512MB RAM) via Lazy Loading.
+Optimized for low-memory cloud containerization via Lazy Loading.
 """
 
 import os

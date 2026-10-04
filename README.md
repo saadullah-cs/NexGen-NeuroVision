@@ -7,6 +7,20 @@ NexGen NeuroVision is a pipeline engineered to classify brain tumor topologies f
 
 The core objective was to push beyond standard transfer learning by fully fine tuning a deep residual network and deploying the optimized weights via an ONNX runtime engine to a Next.js clinical dashboard.
 
+## Cloud Deployment & Dual Branch Architecture
+
+The NexGen NeuroVision API is architected to handle both fully featured local execution and resource constrained cloud deployment using a dual branch strategy.
+
+**Live Demo (Render Free Tier):**
+The live API is deployed from the `render-lite` branch. To comply with Render's strict 512MB RAM free tier limit, this branch utilizes a mathematically optimized pure forward-pass inference engine. By stripping the Grad-CAM backward pass gradient calculations, the cloud container safely processes scans without risking Out of Memory (OOM) 502 crashes.
+*Note: The live API returns the diagnostic classification and confidence scores, but omits visual heatmap generation.*
+
+**Full Local Execution (Main Branch):**
+The `main` branch contains the complete, uncompromised pipeline. When run locally (where standard >1GB RAM allocations are available), the backend dynamically generates PyTorch Grad-CAM mathematical heatmaps and OpenCV bounding boxes to visually explain its diagnostic reasoning. 
+
+To experience the full capability of the NexGen NeuroVision engine, including real time visual overlays, please follow the **Local Setup** instructions below.
+
+
 ## Dataset & Preprocessing Architecture
 The models ingest the Brain Tumor Classification dataset (Kaggle), consisting of 7,200 perfectly balanced MRI scans across four classes: **Glioma, Meningioma, Pituitary, and No Tumor**. 
 
